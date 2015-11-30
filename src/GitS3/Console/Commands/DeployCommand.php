@@ -98,8 +98,6 @@ class DeployCommand extends Command
 		// the file is a JS or CSS file add the
 		// correct content encoding
 		$ext = pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION);
-		echo "ext: " . $ext;
-		echo "comp: ". $this->isCompressed;
 		$metaData = array();
 		if (($ext == "js" || $ext == "css") && $this->isCompressed) {
 			$metaData['Content-Encoding'] = 'gzip';
@@ -109,7 +107,6 @@ class DeployCommand extends Command
 				$metaData['Content-Type'] = 'text/css';
 			}
 		}
-		var_dump($metaData);
 		$this->output->writeln('Uploading ' . $file->getRelativePathname());
 		$this->bucket->upload($file, $metaData);
 	}
