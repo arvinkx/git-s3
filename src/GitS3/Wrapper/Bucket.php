@@ -11,8 +11,9 @@ class Bucket
 
 	private $client;
 	private $name;
+	private $region;
 	
-	public function __construct($key, $secret, $name)
+	public function __construct($key, $secret, $name, $region)
 	{
 		$this->name = $name;
 		
@@ -27,19 +28,31 @@ class Bucket
 			$this->client = S3Client::factory(array(
 				'key'		=> $key,
 				'secret'	=> $secret,
+				'region'	=> $region // Needed or else buckets with dots will cause an error
 			));
 	}
 
-	public function upload(File $file)
+	public function upload(File $file, $metaData)
 	{
 		try
 		{
-			$this->client->putObject(array(
+			if ($metaData['Content-Encoding']) {
+				$this->client->putObject(array(
 				'Bucket'		=> $this->name,
 				'Key'    		=> $file->getRelativePathname(),
 				'SourceFile' 	=> $file->getRealpath(),
 				'ACL'   		=> CannedAcl::PUBLIC_READ,
+				'ContentEncoding' => $metaData['Content-Encoding']
 				));
+			} else {
+				$this->client->putObject(array(
+				'Bucket'		=> $this->name,
+				'Key'    		=> $file->getRelativePathname(),
+				'SourceFile' 	=> $file->getRealpath(),
+				'ACL'   		=> CannedAcl::PUBLIC_READ
+				));
+			}
+			
 		}
 		catch(InstanceProfileCredentialsException $e)
 		{
