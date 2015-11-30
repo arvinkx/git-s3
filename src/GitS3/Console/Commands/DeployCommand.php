@@ -2,6 +2,9 @@
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo as File;
@@ -11,16 +14,24 @@ class DeployCommand extends Command
 {
 	private $output;
 	private $finder;
+	private $isCompressed;
 
 	protected function configure()
 	{
 		$this->setName('deploy');
 		$this->setDescription('Deploy the current git repo');
+		$this->setDefinition(
+			new InputDefinition(array(
+				new InputOption('compressed', 'c')
+				)
+			));
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
 		$application = $this->getApplication();
+
+		$this->isCompressed = $input->getOption('compressed');
 
 		$this->output = $output;
 		$this->bucket = $application->getBucket();
@@ -83,8 +94,24 @@ class DeployCommand extends Command
 
 	private function uploadFile(File $file)
 	{
+		// Check if isCompressed was passed and if 
+		// the file is a JS or CSS file add the
+		// correct content encoding
+		$ext = pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION);
+		echo "ext: " . $ext;
+		echo "comp: ". $this->isCompressed;
+		$metaData = array();
+		if (($ext == "js" || $ext == "css") && $this->isCompressed) {
+			$metaData['Content-Encoding'] = 'gzip';
+			if ($ext == "js") {
+				$metaData['Content-Type'] = 'text/javascript';
+			} else {
+				$metaData['Content-Type'] = 'text/css';
+			}
+		}
+		var_dump($metaData);
 		$this->output->writeln('Uploading ' . $file->getRelativePathname());
-		$this->bucket->upload($file);
+		$this->bucket->upload($file, $metaData);
 	}
 
 	private function deleteFile($fileName)
