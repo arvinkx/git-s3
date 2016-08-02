@@ -99,7 +99,7 @@ class DeployCommand extends Command
 		// correct content encoding
 		$ext = pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION);
 		$metaData = array();
-		if (($ext == "js" || $ext == "css") && $this->isCompressed) {
+		if (($ext == "js" || $ext == "css" || $ext == 'json') && $this->isCompressed) {
 			$metaData['Content-Encoding'] = 'gzip';
 			if ($ext == "js") {
 				$metaData['Content-Type'] = 'text/javascript';
