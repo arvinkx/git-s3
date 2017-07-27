@@ -15,6 +15,7 @@ class DeployCommand extends Command
 	private $output;
 	private $finder;
 	private $isCompressed;
+	private $compressJSON;
 
 	protected function configure()
 	{
@@ -22,6 +23,7 @@ class DeployCommand extends Command
 		$this->setDescription('Deploy the current git repo');
 		$this->setDefinition(
 			new InputDefinition(array(
+				new InputOption('jsonCompression', 'j'),
 				new InputOption('compressed', 'c')
 				)
 			));
@@ -32,6 +34,7 @@ class DeployCommand extends Command
 		$application = $this->getApplication();
 
 		$this->isCompressed = $input->getOption('compressed');
+		$this->compressJSON = $input->getOption('jsonCompression');
 
 		$this->output = $output;
 		$this->bucket = $application->getBucket();
@@ -99,7 +102,7 @@ class DeployCommand extends Command
 		// correct content encoding
 		$ext = pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION);
 		$metaData = array();
-		if (($ext == "js" || $ext == "css" || $ext == 'json') && $this->isCompressed) {
+		if (($ext == "js" || $ext == "css") && ($this->isCompressed || $this->compressJSON)) {
 			$metaData['Content-Encoding'] = 'gzip';
 			if ($ext == "js") {
 				$metaData['Content-Type'] = 'text/javascript';
@@ -107,6 +110,13 @@ class DeployCommand extends Command
 				$metaData['Content-Type'] = 'text/css';
 			}
 		}
+		// Check for json compression flag (-j)
+		if ($ext == "json" && $this->compressJSON) {
+			$metaData['Content-Encoding'] = 'gzip';
+			$metaData['Content-Type'] = 'application/json';
+		}
+
+		// 
 		$this->output->writeln('Uploading ' . $file->getRelativePathname());
 		$this->bucket->upload($file, $metaData);
 	}
